@@ -4,6 +4,7 @@
 
 ## Technologies used
 ### * Java
+### * imageIO
 ### * Springboot
 ### * Hibernate
 ### * H2 database
