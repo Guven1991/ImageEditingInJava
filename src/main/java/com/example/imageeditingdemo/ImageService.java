@@ -20,32 +20,34 @@ public class ImageService {
     }
 
     public void processAndSaveImage(String imageDefectName, MultipartFile file) throws IOException {
-        // Yüklenen dosyayı bir BufferedImage'a dönüştürün
+        // Convert the uploaded file to a BufferedImage
         BufferedImage originalImage = ImageIO.read(file.getInputStream());
         int targetWidth = 32;
         int targetHeight = 32;
         originalImage = resizeImage(originalImage, targetWidth, targetHeight);
 
 
-        // Resmi siyah beyaza dönüştürün
+        // Convert the image to black and white
         BufferedImage grayscaleImage = convertToGrayscale(originalImage);
 
-        // Resmi kırmızı beyaza dönüştürün
+
+        // Convert the image to red and white
         BufferedImage redWhiteImage = convertToRedWhite(grayscaleImage);
-//
-        // Resmi mavi beyaza dönüştürün
+
+        // Convert the image to blue and white
         BufferedImage blueWhiteImage = convertToBlueWhite(grayscaleImage);
-//
-        // Resmi sarı çerçeve içinde siyah beyaza dönüştürün
+
+        // Convert image to black and white in yellow frame
         BufferedImage yellowFramedImage = addYellowFrame(grayscaleImage);
 
-        // BufferedImage'ı byte dizisine dönüştürün
+        // Convert BufferedImage to byte array
         byte[] imageBytes = convertToBytes(grayscaleImage);
         byte[] imageBytesBlue = convertToBytes(blueWhiteImage);
         byte[] imageBytesRed = convertToBytes(redWhiteImage);
         byte[] imageBytesYellowBorder = convertToBytes(yellowFramedImage);
 
-        // ImageEntity oluşturun ve veritabanına kaydedin
+
+        //Create ImageEntity and save it to database
         ImageEntity imageEntity = new ImageEntity();
         imageEntity.setDefectName(imageDefectName);
         imageEntity.setNewDefectImage(imageBytesRed);
@@ -60,7 +62,7 @@ public class ImageService {
         int originalWidth = originalImage.getWidth();
         int originalHeight = originalImage.getHeight();
 
-        // Eğer resim zaten hedef boyutta ise, orijinal resmi geri döndür
+        // If the image is already at the target size, return the original image
         if (originalWidth == targetWidth && originalHeight == targetHeight) {
             return originalImage;
         }
@@ -72,7 +74,8 @@ public class ImageService {
 
         return resizedImage;
     }
-    // Siyah beyaza dönüştürme işlemi
+
+    //Converting to black and white
     private BufferedImage convertToGrayscale(BufferedImage image) {
         int width = image.getWidth();
         int height = image.getHeight();
@@ -100,20 +103,20 @@ public class ImageService {
         int height = grayscaleImage.getHeight();
         BufferedImage redWhiteImage = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
 
-        int redColor = 0xFF0000; // Kırmızı rengin RGB değeri
-        int whiteColor = 0xFFFFFF; // Beyaz rengin RGB değeri
+        int redColor = 0xFF0000;
+        int whiteColor = 0xFFFFFF;
 
-        int threshold = 128; // Eşik değeri, koyu ve açık bölgeleri ayırmak için kullanılır
+        int threshold = 128; // Threshold value is used to separate dark and light areasr
 
         for (int x = 0; x < width; x++) {
             for (int y = 0; y < height; y++) {
                 int grayValue = (grayscaleImage.getRGB(x, y) >> 16) & 0xFF;
 
                 if (grayValue < threshold) {
-                    // Koyu bölgeleri kırmızı yapın
+                    // Make dark areas red
                     redWhiteImage.setRGB(x, y, redColor);
                 } else {
-                    // Açık bölgeleri beyaz yapın
+                    // Make light areas white
                     redWhiteImage.setRGB(x, y, whiteColor);
                 }
             }
@@ -121,53 +124,52 @@ public class ImageService {
 
         return redWhiteImage;
     }
-//
+
 private BufferedImage convertToBlueWhite(BufferedImage grayscaleImage) {
     int width = grayscaleImage.getWidth();
     int height = grayscaleImage.getHeight();
     BufferedImage blueWhiteImage = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
 
-    int blueColor = 0x0000FF; // Mavi rengin RGB değeri
+    int blueColor = 0x0000FF;
 
     for (int x = 0; x < width; x++) {
         for (int y = 0; y < height; y++) {
             int grayValue = (grayscaleImage.getRGB(x, y) >> 16) & 0xFF;
 
-            // Eşik değeri (örneğin, 128) kullanarak koyu ve açık bölgeleri ayırın
-            int threshold = 128; // Eşik değeri
+            // Separate dark and light areas using threshold value (e.g. 128)
+            int threshold = 128;
             if (grayValue < threshold) {
-                // Koyu bölgeleri mavi yapın
+                // Make dark areas blue
                 blueWhiteImage.setRGB(x, y, blueColor);
             } else {
-                // Açık bölgeleri beyaz yapın
-                blueWhiteImage.setRGB(x, y, 0xFFFFFF); // Beyaz rengin RGB değeri
+                // Make light areas white
+                blueWhiteImage.setRGB(x, y, 0xFFFFFF);
             }
         }
     }
 
     return blueWhiteImage;
 }
-//
-    // Sarı çerçeve ekleme işlemi
+// Adding yellow frame
 private BufferedImage addYellowFrame(BufferedImage grayscaleImage) {
     int width = grayscaleImage.getWidth();
     int height = grayscaleImage.getHeight();
-    int frameSize = 4; // Çerçeve kalınlığı, istediğiniz boyuta göre ayarlayabilirsiniz
+    int frameSize = 4; //Frame thickness, you can adjust it to the size you want
 
     BufferedImage framedImage = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
 
-    int yellowColor = 0xFFFF00; // Sarı rengin RGB değeri
+    int yellowColor = 0xFFFF00;
 
     for (int x = 0; x < width; x++) {
         for (int y = 0; y < height; y++) {
-            // Çerçeve kalınlığına göre sarı çerçeve eklemek için koşulları kontrol edin
+            //Check conditions to add yellow frame based on frame thickness
             boolean isFrame = x < frameSize || x >= width - frameSize || y < frameSize || y >= height - frameSize;
 
             if (isFrame) {
-                // Eğer piksel çerçeve bölgesindeyse, sarı rengi kullan
+                // If you are in the pixel frame zone, use yellow color
                 framedImage.setRGB(x, y, yellowColor);
             } else {
-                // Eğer piksel içerideyse, orijinal resmi kullan
+                // If pixel is inside, use original image
                 framedImage.setRGB(x, y, grayscaleImage.getRGB(x, y));
             }
         }
@@ -176,7 +178,8 @@ private BufferedImage addYellowFrame(BufferedImage grayscaleImage) {
     return framedImage;
 }
 
-    // BufferedImage'ı byte dizisine dönüştürme işlemi
+
+    // Converting BufferedImage to byte array
     private byte[] convertToBytes(BufferedImage image) throws IOException {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         ImageIO.write(image, "png", baos);
